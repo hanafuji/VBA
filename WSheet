@@ -1,0 +1,79 @@
+Option Explicit
+
+Private WS_ As Worksheet
+Private sheetName_ As String
+Private tableName_ As String
+Private listObj_ As ListObject
+
+Private Sub Class_Initialize()
+End Sub
+
+Private Sub Class_Terminate()
+End Sub
+
+Public Property Get sheetName() As String
+    sheetName = sheetName_
+End Property
+Public Property Get WS() As Worksheet
+    Set WS = WS_
+End Property
+Public Property Get tableName() As String
+    tableName = tableName_
+End Property
+Public Property Get listObj() As ListObject
+    Set listObj = listObj_
+End Property
+
+
+Public Function CreateListObj(ByVal sheetName As String, ByVal tableName As String)
+    sheetName_ = sheetName
+    Set WS_ = Worksheets(sheetName)
+    tableName_ = tableName
+    Set listObj_ = WS_.ListObjects(tableName)
+End Function
+
+Public Function DeleteTableBody()
+    With listObj_
+        .Range.AutoFilter
+        If Not (.DataBodyRange Is Nothing) Then
+            .DataBodyRange.Delete
+        End If
+    End With
+End Function
+
+Public Function SetSort(ByVal ConditionArr As Variant)
+    With listObj_.Sort
+        .SortFields.Clear
+        Dim itemName
+        For Each itemName In ConditionArr
+            .SortFields.Add Key:=Range(tableName_ & "[[#All],[" & itemName & "]]"), Order:=xlAscending
+        Next
+        .Header = xlYes
+        .Apply
+    End With
+End Function
+
+Public Function DataBodyRangeCopy(ByVal targetWS As WSheet, ByVal itemName As String)
+    listObj_.ListColumns(Me.GetCol(itemName)).DataBodyRange.Copy Worksheets(targetWS.sheetName).Cells(2, (targetWS.GetCol(itemName)))
+End Function
+
+Function DataBodyRangePasteSpecial(ByVal targetWS As WSheet, ByVal itemName As String)
+    listObj_.ListColumns(Me.GetCol(itemName)).DataBodyRange.Copy
+    Worksheets(targetWS.sheetName).Cells(2, targetWS.GetCol(itemName)).PasteSpecial Paste:=xlPasteValues
+End Function
+
+Public Function GetCol(ByVal itemName As String) As Integer
+    GetCol = listObj_.ListColumns(itemName).Range(1).Column
+End Function
+
+Public Function CheckBody(ByVal message As String)
+    If (WorksheetFunction.Subtotal(3, WS_.Range("A1:A" & WS_.Cells(Rows.Count, 1).End(xlUp).row)) = 1) Then
+        WS_.Activate
+        WS_.Range("A1").Select
+        If WS_.FilterMode Then
+            WS_.ShowAllData
+            MsgBox message
+            End
+        End If
+    End If
+End Function
