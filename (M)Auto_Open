@@ -1,0 +1,8 @@
+' within "ThisWorkbook"
+
+Private Sub Workbook_Open()
+    Application.ScreenUpdating = False
+    Workbooks.Open Range("dir_path") & "\" & Range("file_name")
+    ThisWorkbook.Activate
+    Application.ScreenUpdating = True
+End Sub
